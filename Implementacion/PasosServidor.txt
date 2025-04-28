@@ -1,0 +1,18 @@
+Paso 1: esperar "HELLO"
+Paso 2b: recibir reto generado por el cliente
+Paso 3: cifrar con la llave privada del servidor (firma simple)
+Paso 4: enviar reto cifrado al cliente
+Paso 6: esperar respuesta del cliente
+Paso 7: generar parámetros DH (p, g) de 1024 bits
+    - concatenar g, p, g^x para firmarlos
+    - Firmar los datos
+Paso 10: Esperar respuesta del cliente
+Paso 11: recibir g^y del cliente
+    - Reconstruir la clave pública DH del cliente (g^y)
+    - Calcular el digesr SHA-512 de la llave maestra  y separarlo
+Paso 11b: Construir las llaves simétricas
+Paso 12b: recibir IV desde el cliente (16 bytes)
+Paso 13: Enviar tabla de servicios al cliente cifrada
+Paso 14: Recibir solicitud del cliente
+Paso 16: Cifrar respuesta y enviar al cliente
+Paso 18: Esperar confirmación del cliente y cerrar
