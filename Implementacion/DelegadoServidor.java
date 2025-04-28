@@ -264,7 +264,7 @@ public class DelegadoServidor extends Thread {
                 Signature firmaNueva = Signature.getInstance("SHA256withRSA");
                 firmaNueva.initSign(llavePrivada);
                 firmaNueva.update(datosServicios.getBytes()); // firmaNueva cualquier dato
-                firma.sign();
+                firmaNueva.sign();
                 long finFirma = System.nanoTime();
                 medidorTiempos.guardarTiempo("Firmar", finFirma - inicioFirma);
 

@@ -13,7 +13,7 @@ public class MedirTiempos {
 
     public static synchronized void guardarTiempo(String operacion, long tiempoNano) {
         try (PrintWriter out = new PrintWriter(new FileWriter(ARCHIVO, true))) {
-            double tiempoMs = tiempoNano / 1_000_000.0; // convertir de nanosegundos a milisegundos
+            double tiempoMs = tiempoNano / 1_000_000.0;
             out.println(escenario + "," + operacion + "," + tiempoMs);
         } catch (IOException e) {
             e.printStackTrace();
