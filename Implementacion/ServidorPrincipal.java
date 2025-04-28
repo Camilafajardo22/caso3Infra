@@ -52,8 +52,6 @@ public class ServidorPrincipal {
             PublicKey llavePublica = cargarLlavePublica("Llaves/llave_publica.pem");
             PrivateKey llavePrivada = cargarLlavePrivada("Llaves/llave_privada.pem");
 
-            System.out.println("Llave privada generada: " + llavePrivada);
-            System.out.println("Llave pública generada: " + llavePublica);
 
             Map<Integer, String> tablaServicios = new HashMap<>();
             tablaServicios.put(1, "Consulta de vuelo");

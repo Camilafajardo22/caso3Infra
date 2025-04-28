@@ -15,6 +15,7 @@ public class DelegadoServidor extends Thread {
     private PrivateKey llavePrivada;
     private PublicKey llavePublica;
     private Map<Integer, String> tablaServicios;
+    private MedirTiempos medidorTiempos = new MedirTiempos("Concurrente");
 
     public DelegadoServidor(Socket socket, PrivateKey priv, PublicKey pub, Map<Integer, String> servicios) {
         this.socketCliente = socket;
@@ -211,6 +212,110 @@ public class DelegadoServidor extends Thread {
 
             System.out.println("[Servidor] Tabla de servicios enviada con HMAC");
 
+            while (true) {
+                // Paso 14: Leer solicitud cifrada
+                int tamDatos;
+                try {
+                    tamDatos = in.readInt();
+                } catch (EOFException e) {
+                    System.out.println("[Servidor] Cliente cerró conexión.");
+                    break;
+                }
+
+                byte[] datosCifrados = new byte[tamDatos];
+                in.readFully(datosCifrados);
+
+                int tamHMAC = in.readInt();
+                byte[] hmacRecibido = new byte[tamHMAC];
+                in.readFully(hmacRecibido);
+
+                System.out.println("[Servidor] Solicitud recibida del cliente");
+
+                // Paso 15
+
+                
+
+
+                long tiempoInicioVerificacion = System.nanoTime();
+
+                boolean valido = FuncionesCrypto.verificarHMAC(llaveHMAC, datosCifrados, hmacRecibido);
+
+                long tiempoFinVerificacion = System.nanoTime();
+                long tiempoVerificacion = tiempoFinVerificacion - tiempoInicioVerificacion;
+                System.out.println("[Servidor] Tiempo para verificar HMAC: " + tiempoVerificacion + " ns");
+                medidorTiempos.guardarTiempo("VerificarHMAC", tiempoVerificacion);
+
+                if (!valido) {
+                    out.writeUTF("ERROR");
+                    System.out.println("[Servidor] HMAC inválido en solicitud");
+                    continue; 
+                }
+
+                String solicitud = new String(FuncionesCrypto.descifrarAES(llaveAES, IV, datosCifrados));
+                System.out.println("[Servidor] Solicitud del cliente: " + solicitud);
+
+                if (solicitud.equals("FIN")) {
+                    System.out.println("[Servidor] Cliente indicó FIN. Cerrando conexión.");
+                    return;
+                }
+
+                //Simular firmar de nuevo
+                long inicioFirma = System.nanoTime();
+                Signature firmaNueva = Signature.getInstance("SHA256withRSA");
+                firmaNueva.initSign(llavePrivada);
+                firmaNueva.update(datosServicios.getBytes()); // firmaNueva cualquier dato
+                firma.sign();
+                long finFirma = System.nanoTime();
+                medidorTiempos.guardarTiempo("Firmar", finFirma - inicioFirma);
+
+                //Simular cifrar AES de nuevo
+                long inicioCifradoAES = System.nanoTime();
+                FuncionesCrypto.cifrarAES(llaveAES, IV, datosServicios);
+                long finCifradoAES = System.nanoTime();
+                medidorTiempos.guardarTiempo("CifrarAES", finCifradoAES - inicioCifradoAES);
+
+                // Simular cifrar RSA de nuevo
+                long inicioCifradoRSA = System.nanoTime();
+                FuncionesCrypto.cifrarRSA(datosServicios.getBytes(), llavePublica);
+                long finCifradoRSA = System.nanoTime();
+                medidorTiempos.guardarTiempo("CifrarRSA", finCifradoRSA - inicioCifradoRSA);
+
+                String[] partes = solicitud.split("\\+");
+                int idServicio = Integer.parseInt(partes[0]);
+                String ipCliente = partes[1];
+
+                String respuestaCliente;
+                if (!tablaServicios.containsKey(idServicio)) {
+                    respuestaCliente = "-1,-1"; 
+                } else {
+                    String ipServidor = socketCliente.getLocalAddress().getHostAddress();
+                    int puerto = 5000 + idServicio;
+                    respuestaCliente = ipServidor + "," + puerto;
+                }
+                System.out.println("[Servidor] Respuesta al cliente: " + respuestaCliente);
+
+                // Paso 16
+                System.out.println("[Servidor] Cifrando respuesta");
+                byte[] respuestaCifrada = FuncionesCrypto.cifrarAES(llaveAES, IV, respuestaCliente);
+                byte[] hmacRespuesta = FuncionesCrypto.generarHMAC(llaveHMAC, respuestaCifrada);
+
+                out.writeInt(respuestaCifrada.length);
+                out.write(respuestaCifrada);
+                out.writeInt(hmacRespuesta.length);
+                out.write(hmacRespuesta);
+                System.out.println("[Servidor] Respuesta cifrada enviada al cliente");
+
+                // Paso 18: Esperar confirmación OK
+                System.out.println("[Servidor] Esperando respuesta del cliente");
+                String finalConfirm = in.readUTF();
+                if (finalConfirm.equals("OK")) {
+                    System.out.println("[Servidor] Transacción finalizada exitosamente");
+                } else {
+                    System.out.println("[Servidor] El cliente reportó un error en la respuesta");
+                }
+            }
+
+            /* 
             // Paso 14
             System.out.println("[Servidor] Esperando solicitud del cliente");
             int tamDatos = in.readInt();
@@ -275,6 +380,7 @@ public class DelegadoServidor extends Thread {
             } else {
                 System.out.println("[Servidor] El cliente reportó un error en la respuesta");
             }
+            */
 
 
 

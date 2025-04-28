@@ -2,16 +2,18 @@ import javax.crypto.*;
 import javax.crypto.spec.DHParameterSpec;
 import javax.crypto.spec.IvParameterSpec;
 import javax.crypto.spec.SecretKeySpec;
-
 import java.net.*;
 import java.security.*;
-import java.security.spec.PKCS8EncodedKeySpec;
-import java.security.spec.X509EncodedKeySpec;
+import java.security.spec.*;
 import java.util.*;
 import java.io.*;
 import java.math.BigInteger;
 
-public class Cliente {
+public class Cliente2 extends Thread {
+
+    private String host;
+    private int puerto;
+    private int numeroConsultas;
     
     private Socket socket;
     private DataInputStream in;
@@ -20,15 +22,48 @@ public class Cliente {
     private PrivateKey llavePrivada;
     private SecretKey llaveAES;
     private SecretKey llaveHMAC;
-    
-    public Cliente(String host, int puerto) throws Exception {
-        socket = new Socket(host, puerto);
-        in = new DataInputStream(socket.getInputStream());
-        out = new DataOutputStream(socket.getOutputStream());
-        
-        PublicKey llavePublica = cargarLlavePublica("Llaves/llave_publica.pem");
-        PrivateKey llavePrivada = cargarLlavePrivada("Llaves/llave_privada.pem");
+    private IvParameterSpec iv;
 
+    public Cliente2(String host, int puerto, int numeroConsultas) throws Exception {
+        this.socket = new Socket(host, puerto);
+        this.in = new DataInputStream(socket.getInputStream());
+        this.out = new DataOutputStream(socket.getOutputStream());
+        this.host = host;
+        this.puerto = puerto;   
+
+        this.llavePublica = cargarLlavePublica("Llaves/llave_publica.pem");
+        this.llavePrivada = cargarLlavePrivada("Llaves/llave_privada.pem");
+
+        this.numeroConsultas = numeroConsultas;
+    }
+
+    @Override
+    public void run() {
+        try {
+            iniciarConexion();
+            for (int i = 0; i < numeroConsultas; i++) {
+                realizarConsulta();
+                
+            }
+            enviarFin();
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        
+    }
+
+    private void enviarFin() throws Exception {
+        String fin = "FIN";
+        byte[] finCifrado = FuncionesCrypto.cifrarAES(llaveAES, iv, fin);
+        byte[] hmacFin = FuncionesCrypto.generarHMAC(llaveHMAC, finCifrado);
+    
+        out.writeInt(finCifrado.length);
+        out.write(finCifrado);
+    
+        out.writeInt(hmacFin.length);
+        out.write(hmacFin);
+    
+        System.out.println("[Cliente] Solicitud FIN cifrada enviada.");
     }
 
     private void iniciarConexion() throws Exception {
@@ -121,8 +156,8 @@ public class Cliente {
         keyGen.initialize(dhSpec);
         KeyPair keyPairCliente = keyGen.generateKeyPair();
 
-        PrivateKey llavePrivadaDH = keyPairCliente.getPrivate(); // 'y'
-        PublicKey llavePublicaDH = keyPairCliente.getPublic();   // 'G^y'
+        PrivateKey llavePrivadaDH = keyPairCliente.getPrivate(); 
+        PublicKey llavePublicaDH = keyPairCliente.getPublic();  
 
         byte[] gyBytes = llavePublicaDH.getEncoded();
         out.writeInt(gyBytes.length);
@@ -137,7 +172,7 @@ public class Cliente {
         PublicKey clavePublicaServidorDH = keyFactory.generatePublic(x509Spec);
 
         KeyAgreement acuerdo = KeyAgreement.getInstance("DH");
-        acuerdo.init(llavePrivadaDH); // usar MI llave privada DH
+        acuerdo.init(llavePrivadaDH);
         acuerdo.doPhase(clavePublicaServidorDH, true);
 
         byte[] llaveMaestra = acuerdo.generateSecret();
@@ -145,8 +180,8 @@ public class Cliente {
         MessageDigest sha512 = MessageDigest.getInstance("SHA-512");
         byte[] digest = sha512.digest(llaveMaestra);
 
-        byte[] k_ab1_bytes = Arrays.copyOfRange(digest, 0, 32);  // para AES
-        byte[] k_ab2_bytes = Arrays.copyOfRange(digest, 32, 64); // para HMAC
+        byte[] k_ab1_bytes = Arrays.copyOfRange(digest, 0, 32); 
+        byte[] k_ab2_bytes = Arrays.copyOfRange(digest, 32, 64);
 
         llaveAES = new SecretKeySpec(k_ab1_bytes, "AES");
         llaveHMAC = new SecretKeySpec(k_ab2_bytes, "HmacSHA256");
@@ -156,10 +191,10 @@ public class Cliente {
         // Paso 12a: Generar IV aleatorio
         SecureRandom random2 = new SecureRandom();
         byte[] ivBytes = new byte[16];
-        random.nextBytes(ivBytes);
-        IvParameterSpec iv = new IvParameterSpec(ivBytes);
+        random2.nextBytes(ivBytes);
+        this.iv = new IvParameterSpec(ivBytes);
 
-¿        out.writeInt(ivBytes.length);
+        out.writeInt(ivBytes.length);
         out.write(ivBytes);
 
         System.out.println("[Cliente] IV generado y enviado al servidor");
@@ -192,9 +227,10 @@ public class Cliente {
     private void realizarConsulta() throws Exception {
         // Paso 14: Enviar solicitud de servicio (id_servicio + IP_cliente)
 
-        Scanner scanner = new Scanner(System.in);
-        System.out.print("[Cliente] Ingrese el ID del servicio que desea consultar (1, 2 o 3): ");
-        int idServicio = scanner.nextInt();
+        Random random = new Random();
+        int idServicio = random.nextInt(3) + 1; // genera 1, 2 o 3
+        System.out.println("[Cliente] Servicio aleatorio generado: " + idServicio);
+
         String solicitud = idServicio + "+" + socket.getLocalAddress().getHostAddress();
 
         byte[] solicitudCifrada = FuncionesCrypto.cifrarAES(llaveAES, iv, solicitud);
@@ -238,22 +274,19 @@ public class Cliente {
 
     }
 
+
     public static PrivateKey cargarLlavePrivada(String rutaArchivo) throws Exception {
         String keyPEM = leerContenido(rutaArchivo, "PRIVATE KEY");
         byte[] keyBytes = Base64.getDecoder().decode(keyPEM);
-
         PKCS8EncodedKeySpec keySpec = new PKCS8EncodedKeySpec(keyBytes);
-        KeyFactory keyFactory = KeyFactory.getInstance("RSA");
-        return keyFactory.generatePrivate(keySpec);
+        return KeyFactory.getInstance("RSA").generatePrivate(keySpec);
     }
 
     public static PublicKey cargarLlavePublica(String rutaArchivo) throws Exception {
         String keyPEM = leerContenido(rutaArchivo, "PUBLIC KEY");
         byte[] keyBytes = Base64.getDecoder().decode(keyPEM);
-
         X509EncodedKeySpec keySpec = new X509EncodedKeySpec(keyBytes);
-        KeyFactory keyFactory = KeyFactory.getInstance("RSA");
-        return keyFactory.generatePublic(keySpec);
+        return KeyFactory.getInstance("RSA").generatePublic(keySpec);
     }
 
     private static String leerContenido(String ruta, String tipo) throws Exception {
@@ -261,23 +294,31 @@ public class Cliente {
         StringBuilder sb = new StringBuilder();
         String linea;
         boolean dentro = false;
-
         while ((linea = br.readLine()) != null) {
-            if (linea.contains("BEGIN " + tipo)) {
-                dentro = true;
-            } else if (linea.contains("END " + tipo)) {
-                break;
-            } else if (dentro) {
-                sb.append(linea.trim());
-            }
+            if (linea.contains("BEGIN " + tipo)) dentro = true;
+            else if (linea.contains("END " + tipo)) break;
+            else if (dentro) sb.append(linea.trim());
         }
         br.close();
         return sb.toString();
     }
+
     public static void main(String[] args) {
         try {
-            Cliente cliente = new Cliente("localhost", 12345);
-            cliente.iniciar();
+            Scanner scanner = new Scanner(System.in);
+
+            System.out.print("¿Modo iterativo? (s/n): ");
+            String respuesta = scanner.nextLine().trim().toLowerCase();
+
+            int numeroConsultas = 1;
+
+            if (respuesta.equals("s")) {
+                numeroConsultas = 32;
+                
+            }
+
+            Cliente2 cliente = new Cliente2("localhost", 12345, numeroConsultas);
+            cliente.start();
         } catch (Exception e) {
             e.printStackTrace();
         }
