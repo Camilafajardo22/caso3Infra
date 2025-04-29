@@ -22,7 +22,7 @@ public class FuncionesCrypto {
     public static byte[] cifrarAES(SecretKey llave, IvParameterSpec iv, String textoClaro) throws Exception {
         Cipher cipher = Cipher.getInstance("AES/CBC/PKCS5Padding");
         cipher.init(Cipher.ENCRYPT_MODE, llave, iv);
-        return cipher.doFinal(textoClaro.getBytes(StandardCharsets.UTF_8));
+        return cipher.doFinal(textoClaro.getBytes());
     }
 
     public static byte[] descifrarAES(SecretKey llave, IvParameterSpec iv, byte[] datosCifrados) throws Exception {
