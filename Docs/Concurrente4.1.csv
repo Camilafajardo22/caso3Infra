@@ -1,0 +1,21 @@
+Ejecucion,Tipo dato,Tiempo(ms),Ejecucion2,Tipo dato2,Tiempo(ms)4,Ejecucion5,Tipo dato6,Tiempo(ms)7,,,,,,
+Concurrente,VerificarHMAC,0.1039,Concurrente,VerificarHMAC,0.1119,Concurrente,VerificarHMAC,0.0813,,Promedio total,Etiquetas de fila,Promedio de Tiempo(ms),Promedio de Tiempo(ms)4,Promedio de Tiempo(ms)7
+Concurrente,Firmar,0.4914,Concurrente,VerificarHMAC,0.0561,Concurrente,VerificarHMAC,0.1902,,0.128,CifrarAES,0.141,0.081,0.161
+Concurrente,CifrarAES,0.1499,Concurrente,VerificarHMAC,0.0553,Concurrente,Firmar,0.4528,,0.191,CifrarRSA,0.097,0.252,0.225
+Concurrente,CifrarRSA,0.1133,Concurrente,Firmar,0.3374,Concurrente,Firmar,0.3419,,0.206,Firmar,0.394,0.084,0.140
+Concurrente,VerificarHMAC,0.0513,Concurrente,Firmar,0.4171,Concurrente,CifrarAES,0.1742,,0.664,VerificarHMAC,0.158,1.706,0.128
+Concurrente,VerificarHMAC,0.0521,Concurrente,Firmar,0.4072,Concurrente,CifrarAES,0.1317,,,Total general,0.189525,0.766055,0.156405
+Concurrente,Firmar,0.3803,Concurrente,CifrarAES,0.1597,Concurrente,CifrarRSA,0.1273,,,,,,
+Concurrente,CifrarAES,0.1436,Concurrente,CifrarAES,0.1595,Concurrente,CifrarRSA,0.0837,,,,,,
+Concurrente,CifrarRSA,0.1253,Concurrente,CifrarRSA,0.1092,Concurrente,VerificarHMAC,0.049,,,,,,
+Concurrente,VerificarHMAC,0.0531,Concurrente,CifrarRSA,5.9558,Concurrente,VerificarHMAC,0.0455,,,,,,
+Concurrente,VerificarHMAC,0.0414,Concurrente,CifrarAES,6.5265,Concurrente,VerificarHMAC,0.0491,,,,,,
+Concurrente,VerificarHMAC,0.0444,Concurrente,CifrarRSA,0.107,Concurrente,Firmar,0.3802,,,,,,
+Concurrente,Firmar,0.3947,Concurrente,VerificarHMAC,0.0591,Concurrente,CifrarAES,0.1425,,,,,,
+Concurrente,Firmar,0.3085,Concurrente,VerificarHMAC,0.0624,Concurrente,CifrarRSA,0.1001,,,,,,
+Concurrente,CifrarAES,0.1299,Concurrente,VerificarHMAC,0.0619,Concurrente,VerificarHMAC,0.0458,,,,,,
+Concurrente,CifrarAES,0.1411,Concurrente,VerificarHMAC,0.0475,Concurrente,VerificarHMAC,0.0602,,,,,,
+Concurrente,CifrarRSA,0.0858,Concurrente,Firmar,0.4399,Concurrente,Firmar,0.3703,,,,,,
+Concurrente,CifrarRSA,0.0649,Concurrente,CifrarAES,0.1218,Concurrente,CifrarAES,0.1379,,,,,,
+Concurrente,VerificarHMAC,0.0509,Concurrente,CifrarRSA,0.074,Concurrente,CifrarRSA,0.0946,,,,,,
+Concurrente,VerificarHMAC,0.8647,Concurrente,VerificarHMAC,0.0518,Concurrente,VerificarHMAC,0.0698,,,,,,
